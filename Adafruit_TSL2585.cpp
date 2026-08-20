@@ -45,13 +45,17 @@ bool Adafruit_TSL2585::begin(uint8_t i2c_addr, TwoWire* wire) {
     return false;
   }
 
-  if (!readRegister(TSL2585_REG_ID, &_device_id, 1) ||
-      _device_id != TSL2585_DEVICE_ID) {
+  Adafruit_BusIO_Register id_reg(i2c_dev, TSL2585_REG_ID);
+  Adafruit_BusIO_Register revision_id_reg(i2c_dev, TSL2585_REG_REV_ID);
+  Adafruit_BusIO_Register auxiliary_id_reg(i2c_dev, TSL2585_REG_AUX_ID);
+  Adafruit_BusIO_Register uv_calibration_reg(i2c_dev, TSL2585_REG_UV_CALIB);
+
+  if (!id_reg.read(&_device_id) || _device_id != TSL2585_DEVICE_ID) {
     return false;
   }
-  if (!readRegister(TSL2585_REG_REV_ID, &_revision_id, 1) ||
-      !readRegister(TSL2585_REG_AUX_ID, &_auxiliary_id, 1) ||
-      !readRegister(TSL2585_REG_UV_CALIB, &_uv_calibration, 1)) {
+  if (!revision_id_reg.read(&_revision_id) ||
+      !auxiliary_id_reg.read(&_auxiliary_id) ||
+      !uv_calibration_reg.read(&_uv_calibration)) {
     return false;
   }
 
@@ -71,13 +75,17 @@ bool Adafruit_TSL2585::isConnected() {
  * @return True when both I2C writes succeeded.
  */
 bool Adafruit_TSL2585::enable() {
-  if (!writeRegister(TSL2585_REG_ENABLE, TSL2585_ENABLE_PON)) {
+  if (i2c_dev == nullptr) {
+    return false;
+  }
+
+  Adafruit_BusIO_Register enable_reg(i2c_dev, TSL2585_REG_ENABLE);
+  if (!enable_reg.write(TSL2585_ENABLE_PON)) {
     return false;
   }
 
   delay(1);
-  if (!writeRegister(TSL2585_REG_ENABLE,
-                     TSL2585_ENABLE_PON | TSL2585_ENABLE_AEN)) {
+  if (!enable_reg.write(TSL2585_ENABLE_PON | TSL2585_ENABLE_AEN)) {
     return false;
   }
 
@@ -90,7 +98,12 @@ bool Adafruit_TSL2585::enable() {
  * @return True when the I2C write succeeded.
  */
 bool Adafruit_TSL2585::disable() {
-  if (!writeRegister(TSL2585_REG_ENABLE, 0)) {
+  if (i2c_dev == nullptr) {
+    return false;
+  }
+
+  Adafruit_BusIO_Register enable_reg(i2c_dev, TSL2585_REG_ENABLE);
+  if (!enable_reg.write(0)) {
     return false;
   }
 
@@ -104,7 +117,7 @@ bool Adafruit_TSL2585::disable() {
  * @return True when the value was in range and written successfully.
  */
 bool Adafruit_TSL2585::setIntegrationTime(float milliseconds) {
-  if (milliseconds < 0.25F || milliseconds > 90.0F) {
+  if (i2c_dev == nullptr || milliseconds < 0.25F || milliseconds > 90.0F) {
     return false;
   }
 
@@ -115,7 +128,9 @@ bool Adafruit_TSL2585::setIntegrationTime(float milliseconds) {
   if (was_enabled && !disable()) {
     return false;
   }
-  if (!writeRegister(TSL2585_REG_ALS_NR_SAMPLES0, register_value, 2)) {
+  Adafruit_BusIO_Register als_samples_reg(i2c_dev, TSL2585_REG_ALS_NR_SAMPLES0,
+                                          2, LSBFIRST);
+  if (!als_samples_reg.write(register_value)) {
     if (was_enabled) {
       enable();
     }
@@ -144,7 +159,7 @@ float Adafruit_TSL2585::getIntegrationTime() {
  * @return True when the channel and gain were valid and the write succeeded.
  */
 bool Adafruit_TSL2585::setGain(tsl2585_channel_t channel, tsl2585_gain_t gain) {
-  if ((uint8_t)channel > TSL2585_CHANNEL_UVA ||
+  if (i2c_dev == nullptr || (uint8_t)channel > TSL2585_CHANNEL_UVA ||
       (uint8_t)gain > TSL2585_GAIN_4096X) {
     return false;
   }
@@ -160,11 +175,13 @@ bool Adafruit_TSL2585::setGain(tsl2585_channel_t channel, tsl2585_gain_t gain) {
 
   bool success;
   if (channel == TSL2585_CHANNEL_UVA) {
-    success = writeRegister(TSL2585_REG_STEP0_GAIN_H, (uint8_t)gain);
+    Adafruit_BusIO_Register gain_high_reg(i2c_dev, TSL2585_REG_STEP0_GAIN_H);
+    success = gain_high_reg.write((uint8_t)gain);
   } else {
     uint8_t gains = (uint8_t)_gains[TSL2585_CHANNEL_PHOTOPIC] |
                     ((uint8_t)_gains[TSL2585_CHANNEL_IR] << 4);
-    success = writeRegister(TSL2585_REG_STEP0_GAIN_L, gains);
+    Adafruit_BusIO_Register gain_low_reg(i2c_dev, TSL2585_REG_STEP0_GAIN_L);
+    success = gain_low_reg.write(gains);
   }
 
   if (!success) {
@@ -193,8 +210,13 @@ tsl2585_gain_t Adafruit_TSL2585::getGain(tsl2585_channel_t channel) {
  * @return True when ALS_DATA_VALID is set.
  */
 bool Adafruit_TSL2585::dataReady() {
+  if (i2c_dev == nullptr) {
+    return false;
+  }
+
   uint8_t status2;
-  if (!readRegister(TSL2585_REG_STATUS2, &status2, 1)) {
+  Adafruit_BusIO_Register status2_reg(i2c_dev, TSL2585_REG_STATUS2);
+  if (!status2_reg.read(&status2)) {
     return false;
   }
   return (status2 & TSL2585_STATUS2_DATA_VALID) != 0;
@@ -212,7 +234,7 @@ bool Adafruit_TSL2585::dataReady() {
  * @return True when fresh data was read successfully.
  */
 bool Adafruit_TSL2585::readData(tsl2585_data_t* data, uint32_t timeout_ms) {
-  if (data == nullptr || !_enabled) {
+  if (i2c_dev == nullptr || data == nullptr || !_enabled) {
     return false;
   }
 
@@ -225,13 +247,15 @@ bool Adafruit_TSL2585::readData(tsl2585_data_t* data, uint32_t timeout_ms) {
   }
 
   uint8_t status2;
-  if (!readRegister(TSL2585_REG_STATUS2, &status2, 1)) {
+  Adafruit_BusIO_Register status2_reg(i2c_dev, TSL2585_REG_STATUS2);
+  if (!status2_reg.read(&status2)) {
     return false;
   }
 
   uint8_t result[TSL2585_ALS_RESULT_BLOCK_SIZE];
-  if (!readRegister(TSL2585_REG_ALS_STATUS, result,
-                    TSL2585_ALS_RESULT_BLOCK_SIZE)) {
+  Adafruit_BusIO_Register als_result_reg(
+      i2c_dev, TSL2585_REG_ALS_STATUS, TSL2585_ALS_RESULT_BLOCK_SIZE, LSBFIRST);
+  if (!als_result_reg.read(result, TSL2585_ALS_RESULT_BLOCK_SIZE)) {
     return false;
   }
 
@@ -302,44 +326,41 @@ bool Adafruit_TSL2585::configure() {
   _gains[TSL2585_CHANNEL_IR] = TSL2585_GAIN_128X;
   _gains[TSL2585_CHANNEL_UVA] = TSL2585_GAIN_128X;
 
-  if (!writeRegister(TSL2585_REG_MEAS_MODE0, TSL2585_MEAS_MODE0_FULL_COUNTS) ||
-      !writeRegister(TSL2585_REG_MEAS_MODE1,
-                     TSL2585_MEAS_MODE1_MSB_POSITION_12) ||
-      !writeRegister(TSL2585_REG_SAMPLE_TIME0, TSL2585_SAMPLE_TIME_250_US, 2) ||
-      !writeRegister(TSL2585_REG_ALS_NR_SAMPLES0, _als_samples, 2) ||
-      !writeRegister(TSL2585_REG_MEAS_SEQR_FD_0, TSL2585_SEQUENCER_DISABLED) ||
-      !writeRegister(TSL2585_REG_MEAS_SEQR_ALS_FD_1, TSL2585_SEQUENCER_STEP0) ||
-      !writeRegister(TSL2585_REG_MEAS_SEQR_APERS, TSL2585_SEQUENCER_STEP0) ||
-      !writeRegister(TSL2585_REG_MEAS_SEQR_RESIDUAL_0,
-                     TSL2585_SEQUENCER_DISABLED) ||
-      !writeRegister(TSL2585_REG_MEAS_SEQR_RESIDUAL_1,
-                     TSL2585_SEQUENCER_DISABLED) ||
-      !writeRegister(TSL2585_REG_STEP0_GAIN_L, TSL2585_DEFAULT_GAIN_L) ||
-      !writeRegister(TSL2585_REG_STEP0_GAIN_H, TSL2585_DEFAULT_GAIN_H) ||
-      !writeRegister(TSL2585_REG_STEP0_SMUX_L, TSL2585_RECOMMENDED_SMUX_L) ||
-      !writeRegister(TSL2585_REG_STEP0_SMUX_H, TSL2585_RECOMMENDED_SMUX_H)) {
+  Adafruit_BusIO_Register meas_mode0_reg(i2c_dev, TSL2585_REG_MEAS_MODE0);
+  Adafruit_BusIO_Register meas_mode1_reg(i2c_dev, TSL2585_REG_MEAS_MODE1);
+  Adafruit_BusIO_Register sample_time_reg(i2c_dev, TSL2585_REG_SAMPLE_TIME0, 2,
+                                          LSBFIRST);
+  Adafruit_BusIO_Register als_samples_reg(i2c_dev, TSL2585_REG_ALS_NR_SAMPLES0,
+                                          2, LSBFIRST);
+  Adafruit_BusIO_Register sequencer_fd_reg(i2c_dev, TSL2585_REG_MEAS_SEQR_FD_0);
+  Adafruit_BusIO_Register sequencer_als_reg(i2c_dev,
+                                            TSL2585_REG_MEAS_SEQR_ALS_FD_1);
+  Adafruit_BusIO_Register sequencer_persistence_reg(
+      i2c_dev, TSL2585_REG_MEAS_SEQR_APERS);
+  Adafruit_BusIO_Register sequencer_residual0_reg(
+      i2c_dev, TSL2585_REG_MEAS_SEQR_RESIDUAL_0);
+  Adafruit_BusIO_Register sequencer_residual1_reg(
+      i2c_dev, TSL2585_REG_MEAS_SEQR_RESIDUAL_1);
+  Adafruit_BusIO_Register gain_low_reg(i2c_dev, TSL2585_REG_STEP0_GAIN_L);
+  Adafruit_BusIO_Register gain_high_reg(i2c_dev, TSL2585_REG_STEP0_GAIN_H);
+  Adafruit_BusIO_Register smux_low_reg(i2c_dev, TSL2585_REG_STEP0_SMUX_L);
+  Adafruit_BusIO_Register smux_high_reg(i2c_dev, TSL2585_REG_STEP0_SMUX_H);
+
+  if (!meas_mode0_reg.write(TSL2585_MEAS_MODE0_FULL_COUNTS) ||
+      !meas_mode1_reg.write(TSL2585_MEAS_MODE1_MSB_POSITION_12) ||
+      !sample_time_reg.write(TSL2585_SAMPLE_TIME_250_US) ||
+      !als_samples_reg.write(_als_samples) ||
+      !sequencer_fd_reg.write(TSL2585_SEQUENCER_DISABLED) ||
+      !sequencer_als_reg.write(TSL2585_SEQUENCER_STEP0) ||
+      !sequencer_persistence_reg.write(TSL2585_SEQUENCER_STEP0) ||
+      !sequencer_residual0_reg.write(TSL2585_SEQUENCER_DISABLED) ||
+      !sequencer_residual1_reg.write(TSL2585_SEQUENCER_DISABLED) ||
+      !gain_low_reg.write(TSL2585_DEFAULT_GAIN_L) ||
+      !gain_high_reg.write(TSL2585_DEFAULT_GAIN_H) ||
+      !smux_low_reg.write(TSL2585_RECOMMENDED_SMUX_L) ||
+      !smux_high_reg.write(TSL2585_RECOMMENDED_SMUX_H)) {
     return false;
   }
 
   return enable();
-}
-
-/*! @brief Read one or more consecutive registers with BusIO. */
-bool Adafruit_TSL2585::readRegister(uint8_t address, uint8_t* buffer,
-                                    uint8_t length) {
-  if (i2c_dev == nullptr || buffer == nullptr || length == 0) {
-    return false;
-  }
-  Adafruit_BusIO_Register reg(i2c_dev, address, length, LSBFIRST);
-  return reg.read(buffer, length);
-}
-
-/*! @brief Write a one- or two-byte little-endian register with BusIO. */
-bool Adafruit_TSL2585::writeRegister(uint8_t address, uint32_t value,
-                                     uint8_t width) {
-  if (i2c_dev == nullptr || width == 0 || width > 2) {
-    return false;
-  }
-  Adafruit_BusIO_Register reg(i2c_dev, address, width, LSBFIRST);
-  return reg.write(value);
 }

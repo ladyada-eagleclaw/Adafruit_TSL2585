@@ -160,8 +160,6 @@ class Adafruit_TSL2585 {
   uint8_t _uv_calibration = 127;
 
   bool configure();
-  bool readRegister(uint8_t address, uint8_t* buffer, uint8_t length);
-  bool writeRegister(uint8_t address, uint32_t value, uint8_t width = 1);
 };
 
 #endif
