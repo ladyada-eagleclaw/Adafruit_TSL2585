@@ -3,6 +3,8 @@
 This is the Adafruit Arduino library for the ams OSRAM TSL2585 / TSL25853
 ambient light, infrared, and UVA sensor.
 
+![Adafruit TSL2585 breakout board](tsl2585-breakout.png)
+
 The TSL2585 uses I2C to communicate. The sensor provides three independently
 amplified optical channels, factory UVA calibration, and a programmable
 measurement sequencer.
