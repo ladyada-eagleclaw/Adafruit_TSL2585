@@ -1,0 +1,167 @@
+/*!
+ * @file Adafruit_TSL2585.h
+ *
+ * This is a library for the ams OSRAM TSL2585 / TSL25853 ambient light,
+ * infrared, and UVA sensor.
+ *
+ * These sensors use I2C to communicate, 2 pins are required to interface.
+ *
+ * Adafruit invests time and resources providing this open source code,
+ * please support Adafruit and open-source hardware by purchasing products
+ * from Adafruit!
+ *
+ * Written by Limor Fried and the Adafruit team for Adafruit Industries.
+ *
+ * MIT license, all text here must be included in any redistribution.
+ */
+
+#ifndef ADAFRUIT_TSL2585_H
+#define ADAFRUIT_TSL2585_H
+
+#include <Adafruit_BusIO_Register.h>
+#include <Adafruit_I2CDevice.h>
+#include <Wire.h>
+
+#include "Arduino.h"
+
+#define TSL2585_DEFAULT_ADDR 0x39 ///< Fixed TSL2585 I2C address
+#define TSL2585_DEVICE_ID 0x5C    ///< Expected value of the ID register
+
+#define TSL2585_REG_UV_CALIB 0x08        ///< Factory UVA calibration register
+#define TSL2585_REG_ENABLE 0x80          ///< Power and measurement enable
+#define TSL2585_REG_MEAS_MODE0 0x81      ///< Measurement mode register 0
+#define TSL2585_REG_MEAS_MODE1 0x82      ///< Measurement mode register 1
+#define TSL2585_REG_SAMPLE_TIME0 0x83    ///< Sample time low byte
+#define TSL2585_REG_ALS_NR_SAMPLES0 0x85 ///< ALS sample count low byte
+#define TSL2585_REG_AUX_ID 0x90          ///< Auxiliary identification
+#define TSL2585_REG_REV_ID 0x91          ///< Silicon revision identification
+#define TSL2585_REG_ID 0x92              ///< Device identification
+#define TSL2585_REG_ALS_STATUS 0x94      ///< Start of coherent ALS result block
+#define TSL2585_REG_STATUS2 0x9D         ///< ALS validity and saturation status
+#define TSL2585_REG_STATUS4 0x9F         ///< Initialization and trigger status
+#define TSL2585_REG_MEAS_SEQR_FD_0 0xCF  ///< Modulator 0/1 flicker patterns
+#define TSL2585_REG_MEAS_SEQR_ALS_FD_1 0xD0   ///< ALS and modulator 2 patterns
+#define TSL2585_REG_MEAS_SEQR_APERS 0xD1      ///< ALS persistence step pattern
+#define TSL2585_REG_MEAS_SEQR_RESIDUAL_0 0xD2 ///< Modulator 0/1 residuals
+#define TSL2585_REG_MEAS_SEQR_RESIDUAL_1 0xD3 ///< Modulator 2 residuals/wait
+#define TSL2585_REG_STEP0_GAIN_L 0xD4         ///< Step 0 modulator 0/1 gains
+#define TSL2585_REG_STEP0_GAIN_H 0xD5         ///< Step 0 modulator 2 gain
+#define TSL2585_REG_STEP0_SMUX_L 0xDC ///< Step 0 photodiode map low byte
+#define TSL2585_REG_STEP0_SMUX_H 0xDD ///< Step 0 photodiode map high byte
+
+#define TSL2585_ENABLE_PON 0x01 ///< Oscillator and power enable bit
+#define TSL2585_ENABLE_AEN 0x02 ///< Ambient light measurement enable bit
+
+#define TSL2585_STATUS2_DATA_VALID 0x40 ///< New coherent ALS result available
+#define TSL2585_STATUS2_DIGITAL_SATURATION 0x10 ///< ALS result overflowed
+
+#define TSL2585_GAIN_MASK 0x0F ///< Mask for one four-bit gain status field
+
+#define TSL2585_ALS_STATUS_PHOTOPIC_SATURATION 0x20 ///< Modulator 0 saturated
+#define TSL2585_ALS_STATUS_IR_SATURATION 0x10       ///< Modulator 1 saturated
+#define TSL2585_ALS_STATUS_UVA_SATURATION 0x08      ///< Modulator 2 saturated
+
+#define TSL2585_RECOMMENDED_SMUX_L 0xE6 ///< PHO->0, IR->1, UVA->2 mapping
+#define TSL2585_RECOMMENDED_SMUX_H 0x07 ///< PHO->0 and UVA->2 mapping
+
+#define TSL2585_MEAS_MODE0_FULL_COUNTS 0x00     ///< 16-bit counts, no residuals
+#define TSL2585_MEAS_MODE1_MSB_POSITION_12 0x0C ///< Default 20-bit MSB
+#define TSL2585_SEQUENCER_DISABLED 0x00         ///< Disable a sequencer feature
+#define TSL2585_SEQUENCER_STEP0 0x01 ///< Enable sequencer step 0 only
+#define TSL2585_DEFAULT_GAIN_L 0x88  ///< 128x gain on modulators 0 and 1
+#define TSL2585_DEFAULT_GAIN_H 0x08  ///< 128x gain on modulator 2
+
+#define TSL2585_SAMPLE_TIME_250_US 179  ///< 250 us sample time register value
+#define TSL2585_DEFAULT_ALS_SAMPLES 199 ///< 200 samples, or 50 ms
+#define TSL2585_ALS_RESULT_BLOCK_SIZE 9 ///< ALS status/data block byte count
+
+/*!
+ * @brief Optical channels after applying the recommended TSL2585 SMUX map.
+ */
+typedef enum {
+  TSL2585_CHANNEL_PHOTOPIC = 0, ///< Human-eye response channel, modulator 0
+  TSL2585_CHANNEL_IR = 1,       ///< Near-infrared channel, modulator 1
+  TSL2585_CHANNEL_UVA = 2,      ///< 315 nm to 400 nm channel, modulator 2
+} tsl2585_channel_t;
+
+/*!
+ * @brief Programmable modulator gain settings.
+ */
+typedef enum {
+  TSL2585_GAIN_0_5X = 0x00,  ///< 0.5x gain
+  TSL2585_GAIN_1X = 0x01,    ///< 1x gain
+  TSL2585_GAIN_2X = 0x02,    ///< 2x gain
+  TSL2585_GAIN_4X = 0x03,    ///< 4x gain
+  TSL2585_GAIN_8X = 0x04,    ///< 8x gain
+  TSL2585_GAIN_16X = 0x05,   ///< 16x gain
+  TSL2585_GAIN_32X = 0x06,   ///< 32x gain
+  TSL2585_GAIN_64X = 0x07,   ///< 64x gain
+  TSL2585_GAIN_128X = 0x08,  ///< 128x gain
+  TSL2585_GAIN_256X = 0x09,  ///< 256x gain
+  TSL2585_GAIN_512X = 0x0A,  ///< 512x gain
+  TSL2585_GAIN_1024X = 0x0B, ///< 1024x gain
+  TSL2585_GAIN_2048X = 0x0C, ///< 2048x gain
+  TSL2585_GAIN_4096X = 0x0D, ///< 4096x gain
+} tsl2585_gain_t;
+
+/*!
+ * @brief One coherent three-channel TSL2585 measurement.
+ */
+typedef struct {
+  uint16_t photopic;    ///< Raw full-count photopic result
+  uint16_t infrared;    ///< Raw full-count infrared result
+  uint16_t uva;         ///< Raw full-count UVA result
+  float uva_calibrated; ///< UVA counts corrected with the part's OTP factor
+  tsl2585_gain_t photopic_gain; ///< Gain used for the photopic result
+  tsl2585_gain_t infrared_gain; ///< Gain used for the infrared result
+  tsl2585_gain_t uva_gain;      ///< Gain used for the UVA result
+  bool photopic_saturated;      ///< True when the photopic result is invalid
+  bool infrared_saturated;      ///< True when the infrared result is invalid
+  bool uva_saturated;           ///< True when the UVA result is invalid
+} tsl2585_data_t;
+
+/*!
+ * @brief Class that stores state and functions for interacting with TSL2585.
+ */
+class Adafruit_TSL2585 {
+ public:
+  Adafruit_TSL2585();
+  ~Adafruit_TSL2585();
+
+  bool begin(uint8_t i2c_addr = TSL2585_DEFAULT_ADDR, TwoWire* wire = &Wire);
+  bool isConnected();
+  bool enable();
+  bool disable();
+
+  bool setIntegrationTime(float milliseconds);
+  float getIntegrationTime();
+
+  bool setGain(tsl2585_channel_t channel, tsl2585_gain_t gain);
+  tsl2585_gain_t getGain(tsl2585_channel_t channel);
+
+  bool dataReady();
+  bool readData(tsl2585_data_t* data, uint32_t timeout_ms = 1000);
+  float calibrateUVA(uint16_t raw_uva);
+
+  uint8_t getDeviceID();
+  uint8_t getRevisionID();
+  uint8_t getAuxiliaryID();
+  uint8_t getUVCalibration();
+
+ private:
+  Adafruit_I2CDevice* i2c_dev = nullptr;
+  bool _enabled = false;
+  uint16_t _als_samples = TSL2585_DEFAULT_ALS_SAMPLES;
+  tsl2585_gain_t _gains[3] = {TSL2585_GAIN_128X, TSL2585_GAIN_128X,
+                              TSL2585_GAIN_128X};
+  uint8_t _device_id = 0;
+  uint8_t _revision_id = 0;
+  uint8_t _auxiliary_id = 0;
+  uint8_t _uv_calibration = 127;
+
+  bool configure();
+  bool readRegister(uint8_t address, uint8_t* buffer, uint8_t length);
+  bool writeRegister(uint8_t address, uint32_t value, uint8_t width = 1);
+};
+
+#endif
