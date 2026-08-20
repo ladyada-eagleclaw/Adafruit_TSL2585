@@ -295,6 +295,124 @@ float Adafruit_TSL2585::calibrateUVA(uint16_t raw_uva) {
   return raw_uva / correction;
 }
 
+/*! @brief Configure ALS interrupt thresholds and persistence. */
+bool Adafruit_TSL2585::setALSThresholds(tsl2585_channel_t channel,
+                                        uint32_t low_threshold,
+                                        uint32_t high_threshold,
+                                        uint8_t persistence) {
+  if (i2c_dev == nullptr || (uint8_t)channel > TSL2585_CHANNEL_UVA ||
+      low_threshold > high_threshold ||
+      high_threshold > TSL2585_MAX_INTERRUPT_THRESHOLD ||
+      persistence > TSL2585_MAX_INTERRUPT_PERSISTENCE) {
+    return false;
+  }
+
+  bool was_enabled = _enabled;
+  if (was_enabled && !disable()) {
+    return false;
+  }
+
+  Adafruit_BusIO_Register low_threshold_reg(
+      i2c_dev, TSL2585_REG_ALS_THRESHOLD_LOW, 3, LSBFIRST);
+  Adafruit_BusIO_Register high_threshold_reg(
+      i2c_dev, TSL2585_REG_ALS_THRESHOLD_HIGH, 3, LSBFIRST);
+  Adafruit_BusIO_Register cfg5_reg(i2c_dev, TSL2585_REG_CFG5);
+  Adafruit_BusIO_RegisterBits threshold_channel_bits(
+      &cfg5_reg, TSL2585_CFG5_THRESHOLD_CHANNEL_BITS,
+      TSL2585_CFG5_THRESHOLD_CHANNEL_SHIFT);
+  Adafruit_BusIO_RegisterBits persistence_bits(
+      &cfg5_reg, TSL2585_CFG5_PERSISTENCE_BITS, TSL2585_CFG5_PERSISTENCE_SHIFT);
+
+  bool success = low_threshold_reg.write(low_threshold) &&
+                 high_threshold_reg.write(high_threshold) &&
+                 threshold_channel_bits.write((uint8_t)channel) &&
+                 persistence_bits.write(persistence);
+
+  if (was_enabled && !enable()) {
+    return false;
+  }
+  return success;
+}
+
+/*! @brief Route ALS threshold events to the open-drain INT pin. */
+bool Adafruit_TSL2585::enableALSInterrupt() {
+  if (i2c_dev == nullptr) {
+    return false;
+  }
+
+  Adafruit_BusIO_Register cfg3_reg(i2c_dev, TSL2585_REG_CFG3);
+  Adafruit_BusIO_RegisterBits int_pinmap_bits(
+      &cfg3_reg, TSL2585_CFG3_INT_PINMAP_BITS, TSL2585_CFG3_INT_PINMAP_SHIFT);
+  Adafruit_BusIO_Register gpio_reg(i2c_dev, TSL2585_REG_VSYNC_GPIO_INT);
+  Adafruit_BusIO_RegisterBits int_input_enable_bit(
+      &gpio_reg, 1, TSL2585_INT_INPUT_ENABLE_BIT);
+  Adafruit_BusIO_RegisterBits int_invert_bit(&gpio_reg, 1,
+                                             TSL2585_INT_INVERT_BIT);
+  Adafruit_BusIO_Register interrupt_enable_reg(i2c_dev, TSL2585_REG_INTENAB);
+  Adafruit_BusIO_RegisterBits als_interrupt_enable_bit(
+      &interrupt_enable_reg, 1, TSL2585_INTENAB_AIEN_BIT);
+
+  return int_pinmap_bits.write(TSL2585_CFG3_INT_PINMAP_INTERRUPT) &&
+         int_input_enable_bit.write(0) && int_invert_bit.write(0) &&
+         als_interrupt_enable_bit.write(1);
+}
+
+/*! @brief Stop routing ALS threshold events to the INT pin. */
+bool Adafruit_TSL2585::disableALSInterrupt() {
+  if (i2c_dev == nullptr) {
+    return false;
+  }
+
+  Adafruit_BusIO_Register interrupt_enable_reg(i2c_dev, TSL2585_REG_INTENAB);
+  Adafruit_BusIO_RegisterBits als_interrupt_enable_bit(
+      &interrupt_enable_reg, 1, TSL2585_INTENAB_AIEN_BIT);
+  return als_interrupt_enable_bit.write(0);
+}
+
+/*! @brief Check whether an ALS threshold interrupt is pending. */
+bool Adafruit_TSL2585::alsInterruptActive() {
+  if (i2c_dev == nullptr) {
+    return false;
+  }
+
+  Adafruit_BusIO_Register status_reg(i2c_dev, TSL2585_REG_STATUS);
+  Adafruit_BusIO_RegisterBits als_interrupt_status_bit(&status_reg, 1,
+                                                       TSL2585_STATUS_AINT_BIT);
+  return als_interrupt_status_bit.read() != 0;
+}
+
+/*! @brief Clear the pending ALS threshold interrupt. */
+bool Adafruit_TSL2585::clearALSInterrupt() {
+  if (i2c_dev == nullptr) {
+    return false;
+  }
+
+  Adafruit_BusIO_Register status_reg(i2c_dev, TSL2585_REG_STATUS);
+  return status_reg.write(TSL2585_STATUS_AINT);
+}
+
+/*! @brief Release or pull low the open-drain VSYNC/GPIO output. */
+bool Adafruit_TSL2585::setGPIOOutput(bool high) {
+  if (i2c_dev == nullptr) {
+    return false;
+  }
+
+  Adafruit_BusIO_Register cfg3_reg(i2c_dev, TSL2585_REG_CFG3);
+  Adafruit_BusIO_RegisterBits gpio_pinmap_bits(
+      &cfg3_reg, TSL2585_CFG3_GPIO_PINMAP_BITS, TSL2585_CFG3_GPIO_PINMAP_SHIFT);
+  Adafruit_BusIO_Register gpio_reg(i2c_dev, TSL2585_REG_VSYNC_GPIO_INT);
+  Adafruit_BusIO_RegisterBits gpio_invert_bit(&gpio_reg, 1,
+                                              TSL2585_GPIO_INVERT_BIT);
+  Adafruit_BusIO_RegisterBits gpio_input_enable_bit(
+      &gpio_reg, 1, TSL2585_GPIO_INPUT_ENABLE_BIT);
+  Adafruit_BusIO_RegisterBits gpio_output_bit(&gpio_reg, 1,
+                                              TSL2585_GPIO_OUTPUT_BIT);
+
+  return gpio_pinmap_bits.write(TSL2585_CFG3_GPIO_PINMAP_OUTPUT) &&
+         gpio_invert_bit.write(0) && gpio_input_enable_bit.write(0) &&
+         gpio_output_bit.write(high ? 1 : 0);
+}
+
 /*! @return The cached TSL2585 device identification byte. */
 uint8_t Adafruit_TSL2585::getDeviceID() {
   return _device_id;

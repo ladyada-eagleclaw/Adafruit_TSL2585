@@ -27,33 +27,63 @@
 #define TSL2585_DEFAULT_ADDR 0x39 ///< Fixed TSL2585 I2C address
 #define TSL2585_DEVICE_ID 0x5C    ///< Expected value of the ID register
 
-#define TSL2585_REG_UV_CALIB 0x08        ///< Factory UVA calibration register
-#define TSL2585_REG_ENABLE 0x80          ///< Power and measurement enable
-#define TSL2585_REG_MEAS_MODE0 0x81      ///< Measurement mode register 0
-#define TSL2585_REG_MEAS_MODE1 0x82      ///< Measurement mode register 1
-#define TSL2585_REG_SAMPLE_TIME0 0x83    ///< Sample time low byte
-#define TSL2585_REG_ALS_NR_SAMPLES0 0x85 ///< ALS sample count low byte
-#define TSL2585_REG_AUX_ID 0x90          ///< Auxiliary identification
-#define TSL2585_REG_REV_ID 0x91          ///< Silicon revision identification
-#define TSL2585_REG_ID 0x92              ///< Device identification
-#define TSL2585_REG_ALS_STATUS 0x94      ///< Start of coherent ALS result block
-#define TSL2585_REG_STATUS2 0x9D         ///< ALS validity and saturation status
-#define TSL2585_REG_STATUS4 0x9F         ///< Initialization and trigger status
-#define TSL2585_REG_MEAS_SEQR_FD_0 0xCF  ///< Modulator 0/1 flicker patterns
+#define TSL2585_REG_UV_CALIB 0x08          ///< Factory UVA calibration register
+#define TSL2585_REG_ENABLE 0x80            ///< Power and measurement enable
+#define TSL2585_REG_MEAS_MODE0 0x81        ///< Measurement mode register 0
+#define TSL2585_REG_MEAS_MODE1 0x82        ///< Measurement mode register 1
+#define TSL2585_REG_SAMPLE_TIME0 0x83      ///< Sample time low byte
+#define TSL2585_REG_ALS_NR_SAMPLES0 0x85   ///< ALS sample count low byte
+#define TSL2585_REG_ALS_THRESHOLD_LOW 0x8A ///< ALS low threshold, 24-bit
+#define TSL2585_REG_ALS_THRESHOLD_HIGH 0x8D ///< ALS high threshold, 24-bit
+#define TSL2585_REG_AUX_ID 0x90             ///< Auxiliary identification
+#define TSL2585_REG_REV_ID 0x91             ///< Silicon revision identification
+#define TSL2585_REG_ID 0x92                 ///< Device identification
+#define TSL2585_REG_STATUS 0x93             ///< Main interrupt status
+#define TSL2585_REG_ALS_STATUS 0x94     ///< Start of coherent ALS result block
+#define TSL2585_REG_STATUS2 0x9D        ///< ALS validity and saturation status
+#define TSL2585_REG_STATUS4 0x9F        ///< Initialization and trigger status
+#define TSL2585_REG_CFG3 0xA4           ///< INT and GPIO pin mapping
+#define TSL2585_REG_CFG5 0xA6           ///< ALS interrupt channel/persistence
+#define TSL2585_REG_INTENAB 0xBA        ///< External interrupt enables
+#define TSL2585_REG_MEAS_SEQR_FD_0 0xCF ///< Modulator 0/1 flicker patterns
 #define TSL2585_REG_MEAS_SEQR_ALS_FD_1 0xD0   ///< ALS and modulator 2 patterns
 #define TSL2585_REG_MEAS_SEQR_APERS 0xD1      ///< ALS persistence step pattern
 #define TSL2585_REG_MEAS_SEQR_RESIDUAL_0 0xD2 ///< Modulator 0/1 residuals
 #define TSL2585_REG_MEAS_SEQR_RESIDUAL_1 0xD3 ///< Modulator 2 residuals/wait
 #define TSL2585_REG_STEP0_GAIN_L 0xD4         ///< Step 0 modulator 0/1 gains
 #define TSL2585_REG_STEP0_GAIN_H 0xD5         ///< Step 0 modulator 2 gain
-#define TSL2585_REG_STEP0_SMUX_L 0xDC ///< Step 0 photodiode map low byte
-#define TSL2585_REG_STEP0_SMUX_H 0xDD ///< Step 0 photodiode map high byte
+#define TSL2585_REG_STEP0_SMUX_L 0xDC   ///< Step 0 photodiode map low byte
+#define TSL2585_REG_STEP0_SMUX_H 0xDD   ///< Step 0 photodiode map high byte
+#define TSL2585_REG_VSYNC_GPIO_INT 0xF8 ///< INT and GPIO direction/value
 
 #define TSL2585_ENABLE_PON 0x01 ///< Oscillator and power enable bit
 #define TSL2585_ENABLE_AEN 0x02 ///< Ambient light measurement enable bit
 
 #define TSL2585_STATUS2_DATA_VALID 0x40 ///< New coherent ALS result available
 #define TSL2585_STATUS2_DIGITAL_SATURATION 0x10 ///< ALS result overflowed
+#define TSL2585_STATUS_AINT 0x08  ///< ALS threshold interrupt asserted
+#define TSL2585_STATUS_AINT_BIT 3 ///< Position of ALS interrupt status
+
+#define TSL2585_INTENAB_AIEN_BIT 3 ///< Position of ALS interrupt enable
+
+#define TSL2585_CFG3_GPIO_PINMAP_BITS 2   ///< Width of GPIO pin-map field
+#define TSL2585_CFG3_GPIO_PINMAP_SHIFT 0  ///< Position of GPIO pin-map field
+#define TSL2585_CFG3_GPIO_PINMAP_OUTPUT 0 ///< Route GPIO output register to pin
+#define TSL2585_CFG3_INT_PINMAP_BITS 2    ///< Width of INT pin-map field
+#define TSL2585_CFG3_INT_PINMAP_SHIFT 4   ///< Position of INT pin-map field
+#define TSL2585_CFG3_INT_PINMAP_INTERRUPT 0 ///< Route interrupt signal to INT
+
+#define TSL2585_CFG5_THRESHOLD_CHANNEL_BITS 2  ///< Width of channel field
+#define TSL2585_CFG5_THRESHOLD_CHANNEL_SHIFT 4 ///< Position of channel field
+#define TSL2585_CFG5_PERSISTENCE_BITS 4        ///< Width of persistence field
+#define TSL2585_CFG5_PERSISTENCE_SHIFT 0 ///< Position of persistence field
+#define TSL2585_MAX_INTERRUPT_PERSISTENCE 0x0F ///< Largest persistence code
+
+#define TSL2585_INT_INPUT_ENABLE_BIT 5  ///< INT direction bit position
+#define TSL2585_INT_INVERT_BIT 6        ///< INT polarity bit position
+#define TSL2585_GPIO_INVERT_BIT 3       ///< GPIO polarity bit position
+#define TSL2585_GPIO_INPUT_ENABLE_BIT 2 ///< GPIO direction bit position
+#define TSL2585_GPIO_OUTPUT_BIT 1       ///< GPIO open-drain value bit position
 
 #define TSL2585_GAIN_MASK 0x0F ///< Mask for one four-bit gain status field
 
@@ -74,6 +104,7 @@
 #define TSL2585_SAMPLE_TIME_250_US 179  ///< 250 us sample time register value
 #define TSL2585_DEFAULT_ALS_SAMPLES 199 ///< 200 samples, or 50 ms
 #define TSL2585_ALS_RESULT_BLOCK_SIZE 9 ///< ALS status/data block byte count
+#define TSL2585_MAX_INTERRUPT_THRESHOLD 0xFFFFFFUL ///< Largest ALS threshold
 
 /*!
  * @brief Optical channels after applying the recommended TSL2585 SMUX map.
@@ -142,6 +173,15 @@ class Adafruit_TSL2585 {
   bool dataReady();
   bool readData(tsl2585_data_t* data, uint32_t timeout_ms = 1000);
   float calibrateUVA(uint16_t raw_uva);
+
+  bool setALSThresholds(tsl2585_channel_t channel, uint32_t low_threshold,
+                        uint32_t high_threshold, uint8_t persistence = 1);
+  bool enableALSInterrupt();
+  bool disableALSInterrupt();
+  bool alsInterruptActive();
+  bool clearALSInterrupt();
+
+  bool setGPIOOutput(bool high);
 
   uint8_t getDeviceID();
   uint8_t getRevisionID();
