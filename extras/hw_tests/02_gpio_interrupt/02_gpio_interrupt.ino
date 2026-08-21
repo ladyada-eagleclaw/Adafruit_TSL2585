@@ -61,7 +61,7 @@ void setup() {
   Serial.println("D3 returned high when the sensor GPIO was released");
 
   Serial.println();
-  if (!tsl2585.disableALSInterrupt()) {
+  if (!tsl2585.enableALSInterrupt(false)) {
     haltWithFailure(F("Disabling ALS interrupts failed"));
   }
   if (!tsl2585.clearALSInterrupt()) {
@@ -85,7 +85,7 @@ void setup() {
   attachInterrupt(digitalPinToInterrupt(INT_PIN), sensorInterruptHandler,
                   FALLING);
 
-  if (!tsl2585.enableALSInterrupt()) {
+  if (!tsl2585.enableALSInterrupt(true)) {
     haltWithFailure(F("Enabling ALS interrupts failed"));
   }
 
@@ -109,7 +109,7 @@ void setup() {
   }
   Serial.println("Sensor AINT status is set");
 
-  if (!tsl2585.disableALSInterrupt()) {
+  if (!tsl2585.enableALSInterrupt(false)) {
     haltWithFailure(F("Disabling the active ALS interrupt failed"));
   }
   if (!tsl2585.clearALSInterrupt()) {
@@ -148,7 +148,7 @@ void sensorInterruptHandler() {
 
 void haltWithFailure(const __FlashStringHelper *message) {
   detachInterrupt(digitalPinToInterrupt(INT_PIN));
-  tsl2585.disableALSInterrupt();
+  tsl2585.enableALSInterrupt(false);
   tsl2585.clearALSInterrupt();
   tsl2585.setGPIOOutput(true);
   digitalWrite(UVA_LED_PIN, LOW);
@@ -160,7 +160,7 @@ void haltWithFailure(const __FlashStringHelper *message) {
 }
 
 void haltWithSuccess() {
-  tsl2585.disableALSInterrupt();
+  tsl2585.enableALSInterrupt(false);
   tsl2585.clearALSInterrupt();
   tsl2585.setGPIOOutput(true);
   digitalWrite(UVA_LED_PIN, LOW);

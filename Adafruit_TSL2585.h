@@ -179,8 +179,7 @@ class Adafruit_TSL2585 {
 
   bool setALSThresholds(tsl2585_channel_t channel, uint32_t low_threshold,
                         uint32_t high_threshold, uint8_t persistence = 1);
-  bool enableALSInterrupt();
-  bool disableALSInterrupt();
+  bool enableALSInterrupt(bool enabled);
   bool alsInterruptActive();
   bool clearALSInterrupt();
 

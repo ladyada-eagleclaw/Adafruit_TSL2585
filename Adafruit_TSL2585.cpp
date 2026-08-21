@@ -333,12 +333,20 @@ bool Adafruit_TSL2585::setALSThresholds(tsl2585_channel_t channel,
 }
 
 /*!
- * @brief Route ALS threshold events to the open-drain INT pin.
- * @return True when the interrupt routing was configured.
+ * @brief Enable or disable ALS threshold events on the open-drain INT pin.
+ * @param enabled True to enable the interrupt, false to disable it.
+ * @return True when the requested interrupt state was configured.
  */
-bool Adafruit_TSL2585::enableALSInterrupt() {
+bool Adafruit_TSL2585::enableALSInterrupt(bool enabled) {
   if (i2c_dev == nullptr) {
     return false;
+  }
+
+  Adafruit_BusIO_Register interrupt_enable_reg(i2c_dev, TSL2585_REG_INTENAB);
+  Adafruit_BusIO_RegisterBits als_interrupt_enable_bit(
+      &interrupt_enable_reg, 1, TSL2585_INTENAB_AIEN_BIT);
+  if (!enabled) {
+    return als_interrupt_enable_bit.write(0);
   }
 
   Adafruit_BusIO_Register cfg3_reg(i2c_dev, TSL2585_REG_CFG3);
@@ -349,28 +357,9 @@ bool Adafruit_TSL2585::enableALSInterrupt() {
       &gpio_reg, 1, TSL2585_INT_INPUT_ENABLE_BIT);
   Adafruit_BusIO_RegisterBits int_invert_bit(&gpio_reg, 1,
                                              TSL2585_INT_INVERT_BIT);
-  Adafruit_BusIO_Register interrupt_enable_reg(i2c_dev, TSL2585_REG_INTENAB);
-  Adafruit_BusIO_RegisterBits als_interrupt_enable_bit(
-      &interrupt_enable_reg, 1, TSL2585_INTENAB_AIEN_BIT);
-
   return int_pinmap_bits.write(TSL2585_CFG3_INT_PINMAP_INTERRUPT) &&
          int_input_enable_bit.write(0) && int_invert_bit.write(0) &&
          als_interrupt_enable_bit.write(1);
-}
-
-/*!
- * @brief Stop routing ALS threshold events to the INT pin.
- * @return True when the interrupt was disabled.
- */
-bool Adafruit_TSL2585::disableALSInterrupt() {
-  if (i2c_dev == nullptr) {
-    return false;
-  }
-
-  Adafruit_BusIO_Register interrupt_enable_reg(i2c_dev, TSL2585_REG_INTENAB);
-  Adafruit_BusIO_RegisterBits als_interrupt_enable_bit(
-      &interrupt_enable_reg, 1, TSL2585_INTENAB_AIEN_BIT);
-  return als_interrupt_enable_bit.write(0);
 }
 
 /*!
