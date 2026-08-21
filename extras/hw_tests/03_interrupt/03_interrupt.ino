@@ -1,7 +1,6 @@
 #include <Adafruit_TSL2585.h>
 
 #define INT_PIN 2
-#define GPIO_PIN 3
 #define UVA_LED_PIN 4
 
 const uint32_t PIN_CHANGE_TIMEOUT_MS = 100;
@@ -22,43 +21,17 @@ void setup() {
   }
   delay(250);
 
-  Serial.println("TSL2585 D2 INT and D3 GPIO hardware test");
+  Serial.println("TSL2585 D2 INT hardware test");
 
   pinMode(INT_PIN, INPUT);
-  pinMode(GPIO_PIN, INPUT_PULLUP);
   pinMode(UVA_LED_PIN, OUTPUT);
   digitalWrite(UVA_LED_PIN, LOW);
-  Serial.println("D2 and D3 are inputs; D4 UVA LED is safely off");
+  Serial.println("D2 is an input; D4 UVA LED is safely off");
 
   if (!tsl2585.begin()) {
     haltWithFailure(F("Begin failed: check sensor power and I2C wiring"));
   }
   Serial.println("Begin succeeded");
-
-  Serial.println();
-  if (!tsl2585.setGPIOOutput(true)) {
-    haltWithFailure(F("Releasing the sensor GPIO failed"));
-  }
-  if (!waitForPinState(GPIO_PIN, HIGH, PIN_CHANGE_TIMEOUT_MS)) {
-    haltWithFailure(F("D3 did not read high when GPIO was released"));
-  }
-  Serial.println("D3 read high when the sensor GPIO was released");
-
-  if (!tsl2585.setGPIOOutput(false)) {
-    haltWithFailure(F("Pulling the sensor GPIO low failed"));
-  }
-  if (!waitForPinState(GPIO_PIN, LOW, PIN_CHANGE_TIMEOUT_MS)) {
-    haltWithFailure(F("D3 did not read low when GPIO was pulled low"));
-  }
-  Serial.println("D3 read low when the sensor GPIO was pulled low");
-
-  if (!tsl2585.setGPIOOutput(true)) {
-    haltWithFailure(F("Re-releasing the sensor GPIO failed"));
-  }
-  if (!waitForPinState(GPIO_PIN, HIGH, PIN_CHANGE_TIMEOUT_MS)) {
-    haltWithFailure(F("D3 did not return high when GPIO was released"));
-  }
-  Serial.println("D3 returned high when the sensor GPIO was released");
 
   Serial.println();
   if (!tsl2585.enableALSInterrupt(false)) {
@@ -150,7 +123,6 @@ void haltWithFailure(const __FlashStringHelper *message) {
   detachInterrupt(digitalPinToInterrupt(INT_PIN));
   tsl2585.enableALSInterrupt(false);
   tsl2585.clearALSInterrupt();
-  tsl2585.setGPIOOutput(true);
   digitalWrite(UVA_LED_PIN, LOW);
   Serial.print("FAIL: ");
   Serial.println(message);
@@ -162,10 +134,9 @@ void haltWithFailure(const __FlashStringHelper *message) {
 void haltWithSuccess() {
   tsl2585.enableALSInterrupt(false);
   tsl2585.clearALSInterrupt();
-  tsl2585.setGPIOOutput(true);
   digitalWrite(UVA_LED_PIN, LOW);
   Serial.println();
-  Serial.println("ALL GPIO AND INTERRUPT TESTS PASSED");
+  Serial.println("ALL INTERRUPT TESTS PASSED");
   while (true) {
     delay(100);
   }
