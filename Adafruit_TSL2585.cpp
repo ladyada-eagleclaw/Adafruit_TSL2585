@@ -70,7 +70,11 @@ bool Adafruit_TSL2585::isConnected() {
   return i2c_dev != nullptr && i2c_dev->detected();
 }
 
-/*! @brief Enable or disable continuous ALS measurements. */
+/*!
+ * @brief Enable or disable continuous ALS measurements.
+ * @param enabled True to enable measurements, false to disable them.
+ * @return True when the register writes succeeded.
+ */
 bool Adafruit_TSL2585::enable(bool enabled) {
   if (i2c_dev == nullptr) {
     return false;
@@ -282,7 +286,14 @@ float Adafruit_TSL2585::calibrateUVA(uint16_t raw_uva) {
   return raw_uva / correction;
 }
 
-/*! @brief Configure ALS interrupt thresholds and persistence. */
+/*!
+ * @brief Configure ALS interrupt thresholds and persistence.
+ * @param channel Optical channel used for threshold comparisons.
+ * @param low_threshold Inclusive low threshold from 0 through 0xFFFFFF.
+ * @param high_threshold Inclusive high threshold from 0 through 0xFFFFFF.
+ * @param persistence Consecutive out-of-range results required, from 0 to 15.
+ * @return True when the arguments were valid and all writes succeeded.
+ */
 bool Adafruit_TSL2585::setALSThresholds(tsl2585_channel_t channel,
                                         uint32_t low_threshold,
                                         uint32_t high_threshold,
@@ -321,7 +332,10 @@ bool Adafruit_TSL2585::setALSThresholds(tsl2585_channel_t channel,
   return success;
 }
 
-/*! @brief Route ALS threshold events to the open-drain INT pin. */
+/*!
+ * @brief Route ALS threshold events to the open-drain INT pin.
+ * @return True when the interrupt routing was configured.
+ */
 bool Adafruit_TSL2585::enableALSInterrupt() {
   if (i2c_dev == nullptr) {
     return false;
@@ -344,7 +358,10 @@ bool Adafruit_TSL2585::enableALSInterrupt() {
          als_interrupt_enable_bit.write(1);
 }
 
-/*! @brief Stop routing ALS threshold events to the INT pin. */
+/*!
+ * @brief Stop routing ALS threshold events to the INT pin.
+ * @return True when the interrupt was disabled.
+ */
 bool Adafruit_TSL2585::disableALSInterrupt() {
   if (i2c_dev == nullptr) {
     return false;
@@ -356,7 +373,10 @@ bool Adafruit_TSL2585::disableALSInterrupt() {
   return als_interrupt_enable_bit.write(0);
 }
 
-/*! @brief Check whether an ALS threshold interrupt is pending. */
+/*!
+ * @brief Check whether an ALS threshold interrupt is pending.
+ * @return True when the sensor's ALS interrupt status bit is set.
+ */
 bool Adafruit_TSL2585::alsInterruptActive() {
   if (i2c_dev == nullptr) {
     return false;
@@ -368,7 +388,10 @@ bool Adafruit_TSL2585::alsInterruptActive() {
   return als_interrupt_status_bit.read() != 0;
 }
 
-/*! @brief Clear the pending ALS threshold interrupt. */
+/*!
+ * @brief Clear the pending ALS threshold interrupt.
+ * @return True when the write-one-to-clear operation succeeded.
+ */
 bool Adafruit_TSL2585::clearALSInterrupt() {
   if (i2c_dev == nullptr) {
     return false;
@@ -378,7 +401,11 @@ bool Adafruit_TSL2585::clearALSInterrupt() {
   return status_reg.write(TSL2585_STATUS_AINT);
 }
 
-/*! @brief Release or pull low the open-drain VSYNC/GPIO output. */
+/*!
+ * @brief Release or pull low the open-drain VSYNC/GPIO output.
+ * @param high True to release the output, false to pull it low.
+ * @return True when the GPIO routing and output writes succeeded.
+ */
 bool Adafruit_TSL2585::setGPIOOutput(bool high) {
   if (i2c_dev == nullptr) {
     return false;
