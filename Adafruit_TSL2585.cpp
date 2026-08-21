@@ -70,16 +70,21 @@ bool Adafruit_TSL2585::isConnected() {
   return i2c_dev != nullptr && i2c_dev->detected();
 }
 
-/*!
- * @brief Power the oscillator and start continuous ALS measurements.
- * @return True when both I2C writes succeeded.
- */
-bool Adafruit_TSL2585::enable() {
+/*! @brief Enable or disable continuous ALS measurements. */
+bool Adafruit_TSL2585::enable(bool enabled) {
   if (i2c_dev == nullptr) {
     return false;
   }
 
   Adafruit_BusIO_Register enable_reg(i2c_dev, TSL2585_REG_ENABLE);
+  if (!enabled) {
+    if (!enable_reg.write(0)) {
+      return false;
+    }
+    _enabled = false;
+    return true;
+  }
+
   if (!enable_reg.write(TSL2585_ENABLE_PON)) {
     return false;
   }
@@ -90,24 +95,6 @@ bool Adafruit_TSL2585::enable() {
   }
 
   _enabled = true;
-  return true;
-}
-
-/*!
- * @brief Stop measurements and power down the oscillator.
- * @return True when the I2C write succeeded.
- */
-bool Adafruit_TSL2585::disable() {
-  if (i2c_dev == nullptr) {
-    return false;
-  }
-
-  Adafruit_BusIO_Register enable_reg(i2c_dev, TSL2585_REG_ENABLE);
-  if (!enable_reg.write(0)) {
-    return false;
-  }
-
-  _enabled = false;
   return true;
 }
 
@@ -125,21 +112,21 @@ bool Adafruit_TSL2585::setIntegrationTime(float milliseconds) {
   uint16_t register_value = sample_count - 1;
   bool was_enabled = _enabled;
 
-  if (was_enabled && !disable()) {
+  if (was_enabled && !enable(false)) {
     return false;
   }
   Adafruit_BusIO_Register als_samples_reg(i2c_dev, TSL2585_REG_ALS_NR_SAMPLES0,
                                           2, LSBFIRST);
   if (!als_samples_reg.write(register_value)) {
     if (was_enabled) {
-      enable();
+      enable(true);
     }
     return false;
   }
 
   _als_samples = register_value;
   if (was_enabled) {
-    return enable();
+    return enable(true);
   }
   return true;
 }
@@ -168,7 +155,7 @@ bool Adafruit_TSL2585::setGain(tsl2585_channel_t channel, tsl2585_gain_t gain) {
   bool was_enabled = _enabled;
   _gains[channel] = gain;
 
-  if (was_enabled && !disable()) {
+  if (was_enabled && !enable(false)) {
     _gains[channel] = previous_gain;
     return false;
   }
@@ -187,7 +174,7 @@ bool Adafruit_TSL2585::setGain(tsl2585_channel_t channel, tsl2585_gain_t gain) {
   if (!success) {
     _gains[channel] = previous_gain;
   }
-  if (was_enabled && !enable()) {
+  if (was_enabled && !enable(true)) {
     return false;
   }
   return success;
@@ -308,7 +295,7 @@ bool Adafruit_TSL2585::setALSThresholds(tsl2585_channel_t channel,
   }
 
   bool was_enabled = _enabled;
-  if (was_enabled && !disable()) {
+  if (was_enabled && !enable(false)) {
     return false;
   }
 
@@ -328,7 +315,7 @@ bool Adafruit_TSL2585::setALSThresholds(tsl2585_channel_t channel,
                  threshold_channel_bits.write((uint8_t)channel) &&
                  persistence_bits.write(persistence);
 
-  if (was_enabled && !enable()) {
+  if (was_enabled && !enable(true)) {
     return false;
   }
   return success;
@@ -435,7 +422,7 @@ uint8_t Adafruit_TSL2585::getUVCalibration() {
 
 /*! @brief Configure the recommended one-step, three-channel ALS sequence. */
 bool Adafruit_TSL2585::configure() {
-  if (!disable()) {
+  if (!enable(false)) {
     return false;
   }
 
@@ -480,5 +467,5 @@ bool Adafruit_TSL2585::configure() {
     return false;
   }
 
-  return enable();
+  return enable(true);
 }

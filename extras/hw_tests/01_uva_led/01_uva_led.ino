@@ -36,8 +36,8 @@ void setup() {
   }
   Serial.println("Begin succeeded");
 
-  if (!tsl2585.setIntegrationTime(50.0F)) {
-    haltWithFailure(F("Setting the 50 ms integration time failed"));
+  if (!tsl2585.setIntegrationTime(50)) {
+    haltWithFailure(F("Setting the integration time failed"));
   }
   Serial.println("50 ms integration time set");
 

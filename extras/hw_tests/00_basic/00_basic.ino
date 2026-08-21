@@ -43,10 +43,10 @@ void setup() {
   Serial.println(tsl2585.getUVCalibration());
 
   Serial.println();
-  if (!tsl2585.setIntegrationTime(50.0F)) {
-    haltWithFailure(F("Setting the 50 ms integration time failed"));
+  if (!tsl2585.setIntegrationTime(50)) {
+    haltWithFailure(F("Setting the integration time failed"));
   }
-  if (abs(tsl2585.getIntegrationTime() - 50.0F) > 0.01F) {
+  if (abs(tsl2585.getIntegrationTime() - 50) > 0.01F) {
     haltWithFailure(F("Integration time readback did not match 50 ms"));
   }
   Serial.println("50 ms integration time set and verified");
@@ -64,11 +64,11 @@ void setup() {
   Serial.println("128x channel gains set and verified");
 
   Serial.println();
-  if (!tsl2585.disable()) {
+  if (!tsl2585.enable(false)) {
     haltWithFailure(F("Disabling the sensor failed"));
   }
   Serial.println("Disable succeeded");
-  if (!tsl2585.enable()) {
+  if (!tsl2585.enable(true)) {
     haltWithFailure(F("Re-enabling the sensor failed"));
   }
   Serial.println("Re-enable succeeded");

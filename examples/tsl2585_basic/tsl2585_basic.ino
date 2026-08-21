@@ -26,8 +26,8 @@ void setup() {
   Serial.println(tsl2585.getUVCalibration());
 
   // Register-based results support integration times from 0.25 ms to 90 ms.
-  if (!tsl2585.setIntegrationTime(50.0F)) {
-    Serial.println("Could not set the 50 ms integration time.");
+  if (!tsl2585.setIntegrationTime(50)) {
+    Serial.println("Could not set the integration time.");
     while (true) {
       delay(10);
     }
@@ -39,26 +39,22 @@ void setup() {
 
 void loop() {
   tsl2585_data_t data;
-  if (!tsl2585.readData(&data)) {
-    Serial.println("Timed out waiting for a fresh measurement.");
-    delay(100);
-    return;
+  if (tsl2585.readData(&data)) {
+    Serial.print("Photopic: ");
+    Serial.print(data.photopic);
+    Serial.print("    IR: ");
+    Serial.print(data.infrared);
+    Serial.print("    UVA raw: ");
+    Serial.print(data.uva);
+    Serial.print("    UVA calibrated: ");
+    Serial.print(data.uva_calibrated, 1);
+
+    if (data.photopic_saturated || data.infrared_saturated ||
+        data.uva_saturated) {
+      Serial.print("    saturated");
+    }
+    Serial.println();
   }
 
-  Serial.print("Photopic: ");
-  Serial.print(data.photopic);
-  Serial.print("    IR: ");
-  Serial.print(data.infrared);
-  Serial.print("    UVA raw: ");
-  Serial.print(data.uva);
-  Serial.print("    UVA calibrated: ");
-  Serial.print(data.uva_calibrated, 1);
-
-  if (data.photopic_saturated || data.infrared_saturated ||
-      data.uva_saturated) {
-    Serial.print("    saturated");
-  }
-  Serial.println();
-
-  delay(250);
+  delay(100);
 }
