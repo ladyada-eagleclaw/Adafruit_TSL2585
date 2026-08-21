@@ -446,6 +446,9 @@ bool Adafruit_TSL2585::configure() {
       i2c_dev, TSL2585_REG_MEAS_SEQR_RESIDUAL_0);
   Adafruit_BusIO_Register sequencer_residual1_reg(
       i2c_dev, TSL2585_REG_MEAS_SEQR_RESIDUAL_1);
+  Adafruit_BusIO_Register cfg8_reg(i2c_dev, TSL2585_REG_CFG8);
+  Adafruit_BusIO_RegisterBits maximum_gain_bits(
+      &cfg8_reg, TSL2585_CFG8_MAX_GAIN_BITS, TSL2585_CFG8_MAX_GAIN_SHIFT);
   Adafruit_BusIO_Register gain_low_reg(i2c_dev, TSL2585_REG_STEP0_GAIN_L);
   Adafruit_BusIO_Register gain_high_reg(i2c_dev, TSL2585_REG_STEP0_GAIN_H);
   Adafruit_BusIO_Register smux_low_reg(i2c_dev, TSL2585_REG_STEP0_SMUX_L);
@@ -460,6 +463,7 @@ bool Adafruit_TSL2585::configure() {
       !sequencer_persistence_reg.write(TSL2585_SEQUENCER_STEP0) ||
       !sequencer_residual0_reg.write(TSL2585_SEQUENCER_DISABLED) ||
       !sequencer_residual1_reg.write(TSL2585_SEQUENCER_DISABLED) ||
+      !maximum_gain_bits.write(TSL2585_GAIN_4096X) ||
       !gain_low_reg.write(TSL2585_DEFAULT_GAIN_L) ||
       !gain_high_reg.write(TSL2585_DEFAULT_GAIN_H) ||
       !smux_low_reg.write(TSL2585_RECOMMENDED_SMUX_L) ||

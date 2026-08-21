@@ -44,6 +44,7 @@
 #define TSL2585_REG_STATUS4 0x9F        ///< Initialization and trigger status
 #define TSL2585_REG_CFG3 0xA4           ///< INT and GPIO pin mapping
 #define TSL2585_REG_CFG5 0xA6           ///< ALS interrupt channel/persistence
+#define TSL2585_REG_CFG8 0xA9           ///< Maximum sequencer modulator gain
 #define TSL2585_REG_INTENAB 0xBA        ///< External interrupt enables
 #define TSL2585_REG_MEAS_SEQR_FD_0 0xCF ///< Modulator 0/1 flicker patterns
 #define TSL2585_REG_MEAS_SEQR_ALS_FD_1 0xD0   ///< ALS and modulator 2 patterns
@@ -78,6 +79,9 @@
 #define TSL2585_CFG5_PERSISTENCE_BITS 4        ///< Width of persistence field
 #define TSL2585_CFG5_PERSISTENCE_SHIFT 0 ///< Position of persistence field
 #define TSL2585_MAX_INTERRUPT_PERSISTENCE 0x0F ///< Largest persistence code
+
+#define TSL2585_CFG8_MAX_GAIN_BITS 4  ///< Width of maximum gain field
+#define TSL2585_CFG8_MAX_GAIN_SHIFT 4 ///< Position of maximum gain field
 
 #define TSL2585_INT_INPUT_ENABLE_BIT 5  ///< INT direction bit position
 #define TSL2585_INT_INVERT_BIT 6        ///< INT polarity bit position
