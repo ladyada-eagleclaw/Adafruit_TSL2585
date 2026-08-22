@@ -216,9 +216,10 @@ bool Adafruit_TSL2585::dataReady() {
 /*!
  * @brief Wait for and read one coherent three-channel measurement.
  *
- * STATUS2 is read before ALS_STATUS as required by the device. The complete
- * ALS_STATUS through ALS_STATUS3 block is then read in one transaction so the
- * channel values, saturation flags, and actual gains belong to one cycle.
+ * STATUS2 is polled before ALS_STATUS as required by the device. The successful
+ * poll value is retained, and the complete ALS_STATUS through ALS_STATUS3 block
+ * is then read in one transaction so the channel values, saturation flags, and
+ * actual gains belong to one cycle.
  *
  * @param data Destination for the result.
  * @param timeout_ms Maximum wait for fresh data in milliseconds.
@@ -229,18 +230,15 @@ bool Adafruit_TSL2585::readData(tsl2585_data_t* data, uint32_t timeout_ms) {
     return false;
   }
 
+  uint8_t status2;
+  Adafruit_BusIO_Register status2_reg(i2c_dev, TSL2585_REG_STATUS2);
   uint32_t start_ms = millis();
-  while (!dataReady()) {
+  while (!status2_reg.read(&status2) ||
+         !(status2 & TSL2585_STATUS2_DATA_VALID)) {
     if ((millis() - start_ms) >= timeout_ms) {
       return false;
     }
     delay(1);
-  }
-
-  uint8_t status2;
-  Adafruit_BusIO_Register status2_reg(i2c_dev, TSL2585_REG_STATUS2);
-  if (!status2_reg.read(&status2)) {
-    return false;
   }
 
   uint8_t result[TSL2585_ALS_RESULT_BLOCK_SIZE];
