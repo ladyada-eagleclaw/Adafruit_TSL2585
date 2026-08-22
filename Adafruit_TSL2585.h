@@ -88,6 +88,7 @@
 #define TSL2585_GPIO_INVERT_BIT 3       ///< GPIO polarity bit position
 #define TSL2585_GPIO_INPUT_ENABLE_BIT 2 ///< GPIO direction bit position
 #define TSL2585_GPIO_OUTPUT_BIT 1       ///< GPIO open-drain value bit position
+#define TSL2585_GPIO_INPUT_BIT 0        ///< GPIO input value bit position
 
 #define TSL2585_GAIN_MASK 0x0F ///< Mask for one four-bit gain status field
 
@@ -184,6 +185,8 @@ class Adafruit_TSL2585 {
   bool clearALSInterrupt();
 
   bool setGPIOOutput(bool high);
+  bool enableGPIOInput(bool enabled);
+  bool readGPIOInput(bool* high);
 
   uint8_t getDeviceID();
   uint8_t getRevisionID();

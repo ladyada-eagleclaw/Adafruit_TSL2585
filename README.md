@@ -19,7 +19,7 @@ The TSL2585 is a miniature optical sensor with:
 * Per-channel gain from 0.5x to 4096x
 * Programmable integration time
 * Programmable ALS threshold interrupts
-* Open-drain GPIO control
+* GPIO input and open-drain output control
 * A fixed I2C address of `0x39`
 
 ## Installation
