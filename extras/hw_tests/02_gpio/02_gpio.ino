@@ -33,12 +33,8 @@ void setup() {
   }
   Serial.println("Sensor GPIO input enabled");
 
-  bool gpio_high;
   delay(10);
-  if (!tsl2585.readGPIOInput(&gpio_high)) {
-    haltWithFailure(F("Reading the released GPIO input failed"));
-  }
-  if (!gpio_high) {
+  if (!tsl2585.readGPIOInput()) {
     haltWithFailure(F("Sensor GPIO did not read high when D3 was released"));
   }
   Serial.println("PASS: sensor GPIO read high when D3 was released");
@@ -46,20 +42,14 @@ void setup() {
   digitalWrite(GPIO_PIN, LOW);
   pinMode(GPIO_PIN, OUTPUT);
   delay(10);
-  if (!tsl2585.readGPIOInput(&gpio_high)) {
-    haltWithFailure(F("Reading the low GPIO input failed"));
-  }
-  if (gpio_high) {
+  if (tsl2585.readGPIOInput()) {
     haltWithFailure(F("Sensor GPIO did not read low when D3 pulled low"));
   }
   Serial.println("PASS: sensor GPIO read low when D3 pulled low");
 
   pinMode(GPIO_PIN, INPUT);
   delay(10);
-  if (!tsl2585.readGPIOInput(&gpio_high)) {
-    haltWithFailure(F("Reading the re-released GPIO input failed"));
-  }
-  if (!gpio_high) {
+  if (!tsl2585.readGPIOInput()) {
     haltWithFailure(F("Sensor GPIO did not return high when D3 was released"));
   }
   Serial.println("PASS: sensor GPIO returned high when D3 was released");

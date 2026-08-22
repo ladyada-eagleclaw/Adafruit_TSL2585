@@ -186,7 +186,7 @@ class Adafruit_TSL2585 {
 
   bool setGPIOOutput(bool high);
   bool enableGPIOInput(bool enabled);
-  bool readGPIOInput(bool* high);
+  bool readGPIOInput();
 
   uint8_t getDeviceID();
   uint8_t getRevisionID();

@@ -436,21 +436,17 @@ bool Adafruit_TSL2585::enableGPIOInput(bool enabled) {
 
 /*!
  * @brief Read the external state applied to the VSYNC/GPIO pin.
- * @param high Destination for the input state; true means high.
- * @return True when the GPIO register read succeeded.
+ * @return True when the GPIO input is high, false when it is low.
  */
-bool Adafruit_TSL2585::readGPIOInput(bool* high) {
-  if (i2c_dev == nullptr || high == nullptr) {
+bool Adafruit_TSL2585::readGPIOInput() {
+  if (i2c_dev == nullptr) {
     return false;
   }
 
-  uint8_t gpio;
   Adafruit_BusIO_Register gpio_reg(i2c_dev, TSL2585_REG_VSYNC_GPIO_INT);
-  if (!gpio_reg.read(&gpio)) {
-    return false;
-  }
-  *high = (gpio & (1 << TSL2585_GPIO_INPUT_BIT)) != 0;
-  return true;
+  Adafruit_BusIO_RegisterBits gpio_input_bit(&gpio_reg, 1,
+                                             TSL2585_GPIO_INPUT_BIT);
+  return gpio_input_bit.read();
 }
 
 /*! @return The cached TSL2585 device identification byte. */
