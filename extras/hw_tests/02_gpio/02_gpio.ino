@@ -1,7 +1,6 @@
 #include <Adafruit_TSL2585.h>
 
 #define GPIO_PIN 3
-#define UVA_LED_PIN 4
 
 Adafruit_TSL2585 tsl2585;
 
@@ -18,9 +17,7 @@ void setup() {
   Serial.println("TSL2585 D3 GPIO input hardware test");
 
   pinMode(GPIO_PIN, INPUT);
-  pinMode(UVA_LED_PIN, OUTPUT);
-  digitalWrite(UVA_LED_PIN, LOW);
-  Serial.println("D3 will only pull low or release; D4 UVA LED is safely off");
+  Serial.println("D3 will only pull low or release");
 
   if (!tsl2585.begin()) {
     haltWithFailure(F("Begin failed: check sensor power and I2C wiring"));
@@ -62,7 +59,6 @@ void loop() {}
 void haltWithFailure(const __FlashStringHelper *message) {
   pinMode(GPIO_PIN, INPUT);
   tsl2585.enableGPIOInput(false);
-  digitalWrite(UVA_LED_PIN, LOW);
   Serial.print("FAIL: ");
   Serial.println(message);
   while (true) {
@@ -73,7 +69,6 @@ void haltWithFailure(const __FlashStringHelper *message) {
 void haltWithSuccess() {
   pinMode(GPIO_PIN, INPUT);
   tsl2585.enableGPIOInput(false);
-  digitalWrite(UVA_LED_PIN, LOW);
   Serial.println();
   Serial.println("ALL GPIO INPUT TESTS PASSED");
   while (true) {
