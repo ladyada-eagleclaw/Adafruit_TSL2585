@@ -132,8 +132,8 @@ void setup() {
 void loop() {}
 
 bool readFreshData(tsl2585_data_t *data) {
-  tsl2585_data_t old_data;
-  if (!tsl2585.readData(&old_data)) {
+  delay((uint32_t)tsl2585.getIntegrationTime() + 10);
+  if (!tsl2585.dataReady()) {
     return false;
   }
   return tsl2585.readData(data);

@@ -3,8 +3,6 @@
 #define UVA_LED_PIN 4
 
 const uint8_t SAMPLES_PER_LEVEL = 6;
-const uint8_t MAXIMUM_READ_RETRIES = 2;
-const uint8_t READ_RETRY_DELAY_MS = 5;
 const float GAIN_TEST_INTEGRATION_MS = 10;
 const float MAXIMUM_INTEGRATION_GAIN_COUNT = 3500;
 
@@ -28,7 +26,7 @@ Adafruit_TSL2585 tsl2585;
 
 bool testGain(tsl2585_channel_t channel, tsl2585_gain_t *integration_gain);
 bool testIntegrationTime(const tsl2585_gain_t *gains);
-bool readDataWithRetry(tsl2585_data_t *data);
+bool readFreshData(tsl2585_data_t *data);
 bool readAverages(const tsl2585_gain_t *expected_gains, float *averages,
                   bool *saturated);
 bool updateTrend(trend_t *trend, float count, float decrease_fraction,
@@ -254,20 +252,12 @@ bool testIntegrationTime(const tsl2585_gain_t *gains) {
   return true;
 }
 
-bool readDataWithRetry(tsl2585_data_t *data) {
-  for (uint8_t retry = 0; retry <= MAXIMUM_READ_RETRIES; retry++) {
-    if (tsl2585.readData(data)) {
-      if (retry > 0) {
-        Serial.print(F("  PASS: measurement read recovered; retry count: "));
-        Serial.println(retry);
-      }
-      return true;
-    }
-    if (retry < MAXIMUM_READ_RETRIES) {
-      delay(READ_RETRY_DELAY_MS);
-    }
+bool readFreshData(tsl2585_data_t *data) {
+  delay((uint32_t)tsl2585.getIntegrationTime() + 10);
+  if (!tsl2585.dataReady()) {
+    return false;
   }
-  return false;
+  return tsl2585.readData(data);
 }
 
 bool readAverages(const tsl2585_gain_t *expected_gains, float *averages,
@@ -279,16 +269,14 @@ bool readAverages(const tsl2585_gain_t *expected_gains, float *averages,
 
   // Discard the first result after every configuration change.
   tsl2585_data_t data;
-  if (!readDataWithRetry(&data)) {
-    Serial.println(
-        F("Could not read the first post-change measurement after retries."));
+  if (!readFreshData(&data)) {
+    Serial.println(F("Could not read the first post-change measurement."));
     return false;
   }
 
   for (uint8_t sample = 0; sample < SAMPLES_PER_LEVEL; sample++) {
-    if (!readDataWithRetry(&data)) {
-      Serial.println(
-          F("Could not read a measurement during averaging after retries."));
+    if (!readFreshData(&data)) {
+      Serial.println(F("Could not read a measurement during averaging."));
       return false;
     }
     for (uint8_t channel = 0; channel < 3; channel++) {

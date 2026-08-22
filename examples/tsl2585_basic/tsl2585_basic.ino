@@ -38,6 +38,11 @@ void setup() {
 }
 
 void loop() {
+  if (!tsl2585.dataReady()) {
+    delay(100);
+    return;
+  }
+
   tsl2585_data_t data;
   if (tsl2585.readData(&data)) {
     Serial.print("Photopic: ");

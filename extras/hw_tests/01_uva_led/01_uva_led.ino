@@ -114,14 +114,15 @@ bool readAverageUVA(bool led_on, float *average, bool *saturated) {
   delay(100);
 
   tsl2585_data_t data;
-  if (!tsl2585.readData(&data)) {
+  if (!tsl2585.dataReady() || !tsl2585.readData(&data)) {
     return false;
   }
 
   uint32_t sum = 0;
   *saturated = false;
   for (uint8_t sample = 0; sample < SAMPLES_PER_LEVEL; sample++) {
-    if (!tsl2585.readData(&data)) {
+    delay(100);
+    if (!tsl2585.dataReady() || !tsl2585.readData(&data)) {
       return false;
     }
     sum += data.uva;

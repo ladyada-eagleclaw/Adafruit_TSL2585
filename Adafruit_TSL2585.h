@@ -175,7 +175,7 @@ class Adafruit_TSL2585 {
   tsl2585_gain_t getGain(tsl2585_channel_t channel);
 
   bool dataReady();
-  bool readData(tsl2585_data_t* data, uint32_t timeout_ms = 1000);
+  bool readData(tsl2585_data_t* data);
   float calibrateUVA(uint16_t raw_uva);
 
   bool setALSThresholds(tsl2585_channel_t channel, uint32_t low_threshold,

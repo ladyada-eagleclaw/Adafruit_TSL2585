@@ -73,9 +73,14 @@ void setup() {
   }
   Serial.println("Re-enable succeeded");
 
+  delay(100);
+  if (!tsl2585.dataReady()) {
+    haltWithFailure(F("Fresh measurement was not available"));
+  }
+
   tsl2585_data_t data;
   if (!tsl2585.readData(&data)) {
-    haltWithFailure(F("Fresh coherent measurement timed out"));
+    haltWithFailure(F("Reading the coherent measurement failed"));
   }
   Serial.println("Coherent three-channel measurement succeeded");
   Serial.print("Photopic: ");
