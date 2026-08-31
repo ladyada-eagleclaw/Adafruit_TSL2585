@@ -64,7 +64,7 @@ void setup() {
   display.fillScreen(ST77XX_BLACK);
   digitalWrite(TFT_BACKLITE, HIGH);
 
-  drawMessage("TSL2585 LIGHT", "Looking for sensor...", ST77XX_CYAN);
+  drawMessage("Adafruit TSL2585 Demo", "Looking for sensor...", ST77XX_CYAN);
 
   if (!tsl2585.begin()) {
     Serial.println("Could not find a TSL2585. Check the STEMMA QT cable.");
@@ -110,13 +110,12 @@ void drawDashboard(const tsl2585_data_t& data) {
   canvas.fillScreen(ST77XX_BLACK);
 
   canvas.setTextWrap(false);
-  canvas.setFont(&FreeSansBold12pt7b);
+  canvas.setFont(&FreeSansBold9pt7b);
   canvas.setTextSize(1);
   canvas.setTextColor(ST77XX_WHITE);
   canvas.setCursor(4, 18);
-  canvas.print("TSL2585 LIGHT");
+  canvas.print("Adafruit TSL2585 Demo");
 
-  canvas.fillCircle(229, 10, 4, ST77XX_GREEN);
   canvas.drawFastHLine(0, 23, 240, 0x4208);
 
   drawReading("PHOTOPIC", data.photopic_1x, data.photopic_saturated, 42,
@@ -125,16 +124,13 @@ void drawDashboard(const tsl2585_data_t& data) {
               infraredColor);
   drawReading("UVA", data.uva_1x, data.uva_saturated, 106, uvaColor);
 
-  canvas.setFont();
-  canvas.setTextSize(1);
-  canvas.setCursor(4, 126);
   if (data.photopic_saturated || data.infrared_saturated ||
       data.uva_saturated) {
+    canvas.setFont();
+    canvas.setTextSize(1);
     canvas.setTextColor(ST77XX_RED);
+    canvas.setCursor(4, 126);
     canvas.print("SATURATED");
-  } else {
-    canvas.setTextColor(0xBDF7);
-    canvas.print("1x normalized counts | AGC | 50 ms");
   }
 
   display.drawRGBBitmap(0, 0, canvas.getBuffer(), 240, 135);
@@ -150,7 +146,7 @@ void drawReading(const char* label, float value, bool saturated,
 
   canvas.setFont(&FreeSansBold12pt7b);
   canvas.setTextColor(saturated ? ST77XX_RED : ST77XX_WHITE);
-  canvas.setCursor(100, baseline);
+  canvas.setCursor(120, baseline);
   canvas.print(value, 1);
 
   canvas.drawRect(4, baseline + 5, 232, 7, 0x4208);
@@ -163,7 +159,7 @@ void drawReading(const char* label, float value, bool saturated,
 void drawMessage(const char* line1, const char* line2, uint16_t color) {
   canvas.fillScreen(ST77XX_BLACK);
   canvas.setTextWrap(false);
-  canvas.setFont(&FreeSansBold12pt7b);
+  canvas.setFont(&FreeSansBold9pt7b);
   canvas.setTextColor(color);
   canvas.setTextSize(1);
   canvas.setCursor(8, 53);
