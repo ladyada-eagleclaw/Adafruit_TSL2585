@@ -21,19 +21,6 @@
 #include <Fonts/FreeSansBold9pt7b.h>
 #include <SPI.h>
 
-#if !defined(ARDUINO_ADAFRUIT_FEATHER_ESP32S2_TFT)
-
-void setup() {
-  Serial.begin(115200);
-  Serial.println("This example requires an Adafruit ESP32-S2 TFT Feather.");
-}
-
-void loop() {
-  delay(10);
-}
-
-#else
-
 Adafruit_TSL2585 tsl2585;
 Adafruit_ST7789 display(TFT_CS, TFT_DC, TFT_RST);
 GFXcanvas16 canvas(240, 135);
@@ -186,5 +173,3 @@ uint16_t getBarWidth(float value) {
 
   return (uint16_t)(fraction * 228.0);
 }
-
-#endif
