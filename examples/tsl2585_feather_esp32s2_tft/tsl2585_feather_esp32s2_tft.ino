@@ -16,6 +16,9 @@
 #include <Adafruit_GFX.h>
 #include <Adafruit_ST7789.h>
 #include <Adafruit_TSL2585.h>
+#include <Fonts/FreeSans9pt7b.h>
+#include <Fonts/FreeSansBold12pt7b.h>
+#include <Fonts/FreeSansBold9pt7b.h>
 #include <SPI.h>
 
 #if !defined(ARDUINO_ADAFRUIT_FEATHER_ESP32S2_TFT)
@@ -40,8 +43,8 @@ const uint16_t infraredColor = 0xF980;
 const uint16_t uvaColor = 0xA81F;
 
 void drawDashboard(const tsl2585_data_t& data);
-void drawReading(const char* label, float value, bool saturated, int16_t y,
-                 uint16_t color);
+void drawReading(const char* label, float value, bool saturated,
+                 int16_t baseline, uint16_t color);
 void drawMessage(const char* line1, const char* line2, uint16_t color);
 uint16_t getBarWidth(float value);
 
@@ -65,7 +68,7 @@ void setup() {
 
   if (!tsl2585.begin()) {
     Serial.println("Could not find a TSL2585. Check the STEMMA QT cable.");
-    drawMessage("TSL2585 NOT FOUND", "Check STEMMA QT cable", ST77XX_RED);
+    drawMessage("NO TSL2585", "Check STEMMA QT cable", ST77XX_RED);
     while (true) {
       delay(10);
     }
@@ -73,7 +76,7 @@ void setup() {
 
   if (!tsl2585.setIntegrationTime(50)) {
     Serial.println("Could not set the integration time.");
-    drawMessage("TSL2585 ERROR", "Could not configure sensor", ST77XX_RED);
+    drawMessage("TSL2585 ERROR", "Configuration failed", ST77XX_RED);
     while (true) {
       delay(10);
     }
@@ -107,20 +110,22 @@ void drawDashboard(const tsl2585_data_t& data) {
   canvas.fillScreen(ST77XX_BLACK);
 
   canvas.setTextWrap(false);
-  canvas.setTextSize(2);
+  canvas.setFont(&FreeSansBold12pt7b);
+  canvas.setTextSize(1);
   canvas.setTextColor(ST77XX_WHITE);
-  canvas.setCursor(4, 3);
+  canvas.setCursor(4, 18);
   canvas.print("TSL2585 LIGHT");
 
-  canvas.fillCircle(229, 9, 4, ST77XX_GREEN);
-  canvas.drawFastHLine(0, 20, 240, 0x4208);
+  canvas.fillCircle(229, 10, 4, ST77XX_GREEN);
+  canvas.drawFastHLine(0, 23, 240, 0x4208);
 
-  drawReading("PHOTOPIC", data.photopic_1x, data.photopic_saturated, 25,
+  drawReading("PHOTOPIC", data.photopic_1x, data.photopic_saturated, 42,
               photopicColor);
-  drawReading("INFRARED", data.infrared_1x, data.infrared_saturated, 57,
+  drawReading("INFRARED", data.infrared_1x, data.infrared_saturated, 74,
               infraredColor);
-  drawReading("UVA", data.uva_1x, data.uva_saturated, 89, uvaColor);
+  drawReading("UVA", data.uva_1x, data.uva_saturated, 106, uvaColor);
 
+  canvas.setFont();
   canvas.setTextSize(1);
   canvas.setCursor(4, 126);
   if (data.photopic_saturated || data.infrared_saturated ||
@@ -135,35 +140,37 @@ void drawDashboard(const tsl2585_data_t& data) {
   display.drawRGBBitmap(0, 0, canvas.getBuffer(), 240, 135);
 }
 
-void drawReading(const char* label, float value, bool saturated, int16_t y,
-                 uint16_t color) {
+void drawReading(const char* label, float value, bool saturated,
+                 int16_t baseline, uint16_t color) {
+  canvas.setFont(&FreeSansBold9pt7b);
   canvas.setTextSize(1);
   canvas.setTextColor(color);
-  canvas.setCursor(4, y);
+  canvas.setCursor(4, baseline);
   canvas.print(label);
 
-  canvas.setTextSize(2);
+  canvas.setFont(&FreeSansBold12pt7b);
   canvas.setTextColor(saturated ? ST77XX_RED : ST77XX_WHITE);
-  canvas.setCursor(73, y - 3);
+  canvas.setCursor(100, baseline);
   canvas.print(value, 1);
 
-  canvas.drawRect(4, y + 13, 232, 8, 0x4208);
+  canvas.drawRect(4, baseline + 5, 232, 7, 0x4208);
   uint16_t width = getBarWidth(value);
   if (width > 0) {
-    canvas.fillRect(6, y + 15, width, 4, color);
+    canvas.fillRect(6, baseline + 7, width, 3, color);
   }
 }
 
 void drawMessage(const char* line1, const char* line2, uint16_t color) {
   canvas.fillScreen(ST77XX_BLACK);
   canvas.setTextWrap(false);
+  canvas.setFont(&FreeSansBold12pt7b);
   canvas.setTextColor(color);
-  canvas.setTextSize(2);
-  canvas.setCursor(8, 38);
-  canvas.print(line1);
   canvas.setTextSize(1);
+  canvas.setCursor(8, 53);
+  canvas.print(line1);
+  canvas.setFont(&FreeSans9pt7b);
   canvas.setTextColor(ST77XX_WHITE);
-  canvas.setCursor(8, 72);
+  canvas.setCursor(8, 83);
   canvas.print(line2);
   display.drawRGBBitmap(0, 0, canvas.getBuffer(), 240, 135);
 }
